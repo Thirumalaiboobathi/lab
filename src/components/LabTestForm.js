@@ -13,7 +13,8 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow,Grid
+  TableRow,
+  Grid
 } from '@mui/material';
 
 const LabTestForm = () => {
@@ -23,7 +24,6 @@ const LabTestForm = () => {
     mobileNumber: '',
   });
   const [selectedTest, setSelectedTest] = useState(null);
-  const [selectedTestType, setSelectedTestType] = useState(null);
   const [testTypes, setTestTypes] = useState([{ type: null }]);
   const [referenceRanges, setReferenceRanges] = useState([]);
   const [alertMessages, setAlertMessages] = useState([]);
@@ -61,6 +61,17 @@ const LabTestForm = () => {
   const addTestType = () => {
     setTestTypes([...testTypes, { type: null }]);
   };
+
+  
+  const handleAddTest = () => {
+    setTestTypes([...testTypes, { type: null }]);
+    setFormData({
+      ...formData,
+      // Optionally reset form fields related to the new test if necessary
+    });
+  };
+
+  
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -116,17 +127,16 @@ const LabTestForm = () => {
     setShowForm(false);
   };
 
-
   const availableTestTypes = referenceRanges
     .filter((test) => test["testName"] === selectedTest)
     .flatMap((test) => test.sections.map(section => section.sectionName));
 
-    const handlePrint = () => {
-      if (!tableData || tableData.length === 0) return;
-    
-      const printWindow = window.open('', '', 'height=800,width=1000');
-    
-      const styles = `
+  const handlePrint = () => {
+    if (!tableData || tableData.length === 0) return;
+
+    const printWindow = window.open('', '', 'height=800,width=1000');
+
+    const styles = `
         body { font-family: Arial, sans-serif; margin: 20px; }
         h2 { text-align: center; margin: 0; }
         h3 { text-align: center; margin: 0; color: #555; }
@@ -134,79 +144,98 @@ const LabTestForm = () => {
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         td, th { padding: 8px; text-align: left; border: 1px solid #ddd; }
         tr:nth-child(even) { background-color: #f2f2f2; }
-      `;
-    
-      // Group the tableData by testName and testType
-      const groupedData = tableData.reduce((acc, row) => {
+        .container { display: flex; justify-content: space-between; }
+        .box { border: 1px solid #ddd; padding: 10px; width: 48%; }
+        .box-title { font-weight: bold; margin-bottom: 10px; }
+    `;
+
+    // Group the tableData by testName and testType
+    const groupedData = tableData.reduce((acc, row) => {
         const { testName, testType } = row;
         const existingTable = acc.find(
-          (table) => table.testName === testName && table.testType === testType
+            (table) => table.testName === testName && table.testType === testType
         );
-    
+
         if (existingTable) {
-          existingTable.data.push(row); // Add row to existing table data
+            existingTable.data.push(row); // Add row to existing table data
         } else {
-          acc.push({
-            testName,
-            testType,
-            data: [row], // Initial data for the new table
-          });
+            acc.push({
+                testName,
+                testType,
+                data: [row], // Initial data for the new table
+            });
         }
-    
+
         return acc;
-      }, []);
-    
-      // Create HTML content for print
-      const htmlContent = `
+    }, []);
+
+    // Create HTML content for print
+    const htmlContent = `
         <html>
-          <head>
-            <title>Receipt</title>
-            <style>${styles}</style>
-          </head>
-          <body>
-            <div style="text-align: center;">
-              <h2>ABC Lab</h2>
-              <h3>"Your Health, Our Priority"</h3>
-            </div>
-            <p><strong>Patient Name:</strong> ${formData.patientName}</p>
-            <p><strong>Age:</strong> ${formData.age}</p>
-            <p><strong>Mobile Number:</strong> ${formData.mobileNumber}</p>
-            ${groupedData.map(table => `
-              <div style="margin-top: 20px;">
-                <h4>${table.testName} - ${table.testType}</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Parameter</th>
-                      <th>Entered Value</th>
-                      <th>Normal Range</th>
-                      <th>Method</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${table.data.map(row => `
-                      <tr>
-                        <td>${row.parameter}</td>
-                        <td>${row.value}</td>
-                        <td>${row.normalRange}</td>
-                        <td>${row.method}</td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
-            `).join('')}
-          </body>
+            <head>
+                <title>Receipt</title>
+                <style>${styles}</style>
+            </head>
+            <body>
+                <div style="text-align: center;">
+                    <h2>ABC Lab</h2>
+                    <h3>"Your Health, Our Priority"</h3>
+                </div>
+                <div class="container">
+                    <div class="box">
+                        <div class="box-title">Patient Details</div>
+                        <p><strong>Patient Name:</strong> ${formData.patientName}</p>
+                        <p><strong>Age/Gender:</strong> ${formData.age}</p>
+                        <p><strong>UHID/MR No:</strong> ${formData.uhid}</p>
+                        <p><strong>Visit ID:</strong> ${formData.visitId}</p>
+                        <p><strong>Ref Doctor:</strong> ${formData.refDoctor}</p>
+                        <p><strong>IP/OP NO:</strong> ${formData.ipOpNo}</p>
+                    </div>
+                    <div class="box">
+                        <div class="box-title">Client Information</div>
+                        <p><strong>Collected:</strong> ${formData.collected}</p>
+                        <p><strong>Received:</strong> ${formData.received}</p>
+                        <p><strong>Reported:</strong> ${formData.reported}</p>
+                        <p><strong>Status:</strong> ${formData.status}</p>
+                        <p><strong>Client Name:</strong> ${formData.clientName}</p>
+                        <p><strong>Patient Location:</strong> ${formData.patientLocation}</p>
+                    </div>
+                </div>
+                ${groupedData.map(table => `
+                    <div style="margin-top: 20px;">
+                        <h4>${table.testName} - ${table.testType}</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Parameter</th>
+                                    <th>Entered Value</th>
+                                    <th>Normal Range</th>
+                                    <th>Method</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${table.data.map(row => `
+                                    <tr>
+                                        <td>${row.parameter}</td>
+                                        <td>${row.value}</td>
+                                        <td>${row.normalRange}</td>
+                                        <td>${row.method}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `).join('')}
+            </body>
         </html>
-      `;
-    
-      printWindow.document.open();
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-    };
-    
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
 
   if (loading) {
     return <Typography>Loading...</Typography>;
@@ -252,7 +281,6 @@ const LabTestForm = () => {
             value={selectedTest}
             onChange={(event, newValue) => {
               setSelectedTest(newValue);
-              setSelectedTestType(null); // Reset test type when test name changes
               setTestTypes([{ type: null }]); // Reset test types
             }}
             getOptionLabel={(option) => option || ''}
@@ -272,7 +300,6 @@ const LabTestForm = () => {
                     const newTestTypes = [...testTypes];
                     newTestTypes[index].type = newValue;
                     setTestTypes(newTestTypes);
-                    setSelectedTestType(newValue); // Set selected test type when changed
                   }}
                   getOptionLabel={(option) => option || ''}
                   renderInput={(params) => (
@@ -280,16 +307,16 @@ const LabTestForm = () => {
                   )}
                 />
               ))}
-              <Button variant="contained" color="primary" onClick={addTestType}>
-                Add Another Test Type
+              <Button variant="contained" color="primary" onClick={handleAddTest}>
+                Add Another Test
               </Button>
             </>
           )}
 
-          {showForm && selectedTest && selectedTestType && referenceRanges
+          {showForm && selectedTest && testTypes.length > 0 && referenceRanges
             .filter(test => test["testName"] === selectedTest)
             .flatMap(test => test.sections
-              .filter(section => section.sectionName === selectedTestType)
+              .filter(section => testTypes.some(testType => testType.type === section.sectionName))
               .flatMap(section => (
                 <Box key={section.sectionName} style={{ marginBottom: '16px' }}>
                   <Typography variant="h6" style={{ marginBottom: '8px' }}>{section.sectionName}</Typography>
@@ -302,7 +329,7 @@ const LabTestForm = () => {
                           onChange={(event) => handleChange(event, param.name)}
                           variant="outlined"
                           fullWidth
-                          style={{ maxWidth: '100%' }} // Adjust width as needed
+                          style={{ maxWidth: '100%' }}
                         />
                       </Grid>
                     ))}
@@ -317,7 +344,9 @@ const LabTestForm = () => {
               Submit
             </Button>
           </Box>
+          
         </form>
+        
       </Paper>
 
       {alertMessages.length > 0 && (
@@ -332,7 +361,6 @@ const LabTestForm = () => {
 
       {tableData && (
         <Box mt={2}>
-          {/** Group the tableData by testName and testType */}
           <Button variant="contained" color="secondary" onClick={handlePrint}>
             Print Receipt
           </Button>
