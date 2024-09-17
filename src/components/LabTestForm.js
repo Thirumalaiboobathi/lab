@@ -7,7 +7,13 @@ import {
   Button,
   Box,
   Paper,
-  Alert
+  Alert,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow
 } from '@mui/material';
 
 const LabTestForm = () => {
@@ -22,6 +28,7 @@ const LabTestForm = () => {
   const [alertMessages, setAlertMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [tableData, setTableData] = useState(null); // New state to store table data
 
   // Fetch the reference ranges from the API
   useEffect(() => {
@@ -55,77 +62,64 @@ const LabTestForm = () => {
   const handleSubmit = (event) => {
     event.preventDefault();
     const alerts = [];
-  
+    const tableRows = [];
+
     // Check if the input values fall within the reference ranges
     referenceRanges.forEach((test) => {
-      if (test["Test Name"] === selectedTest && test["Test Type"] === selectedTestType) {
-        const testValue = parseFloat(formData[test["Test Name"]]);
-        if (testValue < test["Min Range"] || testValue > test["Max Range"]) {
-          alerts.push({
-            message: `${test["Test Name"]} (${test["Test Type"]}) is out of range! Min: ${test["Min Range"]}, Max: ${test["Max Range"]}`,
-            disease: test["Disease"]
+      if (test["testName"] === selectedTest) {
+        const testParameters = test.sections.find(section => section.sectionName === selectedTestType)?.parameters || [];
+        
+        testParameters.forEach(param => {
+          const testValue = formData[param.name];
+          if (param.method === 'Numeric') {
+            const numericValue = parseFloat(testValue);
+            if (numericValue < parseFloat(param.normalRange.split('-')[0]) || numericValue > parseFloat(param.normalRange.split('-')[1] || param.normalRange)) {
+              alerts.push({
+                message: `${param.name} (${selectedTestType}) is out of range! Normal Range: ${param.normalRange}`,
+                disease: '' // Add logic to determine the disease if applicable
+              });
+            }
+          } else if (param.method === 'Visual') {
+            if (testValue !== param.normalRange) {
+              alerts.push({
+                message: `${param.name} (${selectedTestType}) is out of range! Normal Range: ${param.normalRange}`,
+                disease: '' // Add logic to determine the disease if applicable
+              });
+            }
+          }
+
+          // Add test details to the table
+          tableRows.push({
+            testName: selectedTest,
+            testType: selectedTestType,
+            parameter: param.name,
+            value: testValue || 'N/A',
+            normalRange: param.normalRange,
+            method: param.method || 'N/A'
           });
-        }
+        });
       }
     });
 
-    
-  
+    setTableData(tableRows); // Store the table data
+
     // Display the alerts
     if (alerts.length > 0) {
       setAlertMessages(alerts);
     } else {
       setAlertMessages([{ message: 'All test values are within the normal range.', disease: '' }]);
-  
-      // Prepare the data to send
-      const submissionData = {
-        patientName: formData.patientName,
-        age: formData.age,
-        mobileNumber: formData.mobileNumber,
-        selectedTest,
-        selectedTestType,
-        testValues: referenceRanges
-          .filter((test) => test["Test Name"] === selectedTest && test["Test Type"] === selectedTestType)
-          .map((test) => ({
-            testName: test["Test Name"],
-            testType: test["Test Type"],
-            value: formData[test["Test Name"]] || 'N/A'
-          }))
-      };
-  
-      // Send data to the API
-      fetch('https://66320bb4c51e14d695633233.mockapi.io/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(submissionData),
-      })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.json();
-        })
-        .then(data => {
-          console.log('Success:', data);
-          // You can add more logic here, such as showing a success message
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          // Handle the error here, such as showing an error message
-        });
     }
   };
-  
 
   // Get unique test types based on the selected test name
   const availableTestTypes = referenceRanges
-    .filter((test) => test["Test Name"] === selectedTest)
-    .map((test) => test["Test Type"]);
+    .filter((test) => test["testName"] === selectedTest)
+    .flatMap((test) => test.sections.map(section => section.sectionName));
 
-  // Print receipt
+  // Print receipt in table format
   const handlePrint = () => {
+    if (!tableData || tableData.length === 0) return;
+
     const printWindow = window.open('', '', 'height=800,width=1000');
     printWindow.document.write('<html><head><title>Receipt</title>');
     printWindow.document.write('<style>');
@@ -133,63 +127,37 @@ const LabTestForm = () => {
     printWindow.document.write('h2 { text-align: center; margin: 0; }');
     printWindow.document.write('h3 { text-align: center; margin: 0; color: #555; }');
     printWindow.document.write('p { margin: 0; }');
-    printWindow.document.write('.container { display: flex; justify-content: space-between; }');
-    printWindow.document.write('.section { width: 48%; }');
-    printWindow.document.write('.test-details { margin-top: 20px; }');
     printWindow.document.write('table { width: 100%; border-collapse: collapse; margin-top: 20px; }');
-    printWindow.document.write('td { padding: 8px; text-align: left; }');
+    printWindow.document.write('td, th { padding: 8px; text-align: left; border: 1px solid #ddd; }');
     printWindow.document.write('tr:nth-child(even) { background-color: #f2f2f2; }');
-    printWindow.document.write('td:nth-child(1) { color: #007BFF; font-weight: bold; }'); // Test Name column color
-    printWindow.document.write('td:nth-child(2) { color: #333; }'); // Test Value column color
     printWindow.document.write('</style>');
     printWindow.document.write('</head><body>');
-  
+
     // Header section with Lab logo and information
     printWindow.document.write('<div style="text-align: center;">');
-    printWindow.document.write('<img src="https://via.placeholder.com/150" alt="Lab Logo" style="margin-bottom: 10px;">'); // Replace with actual logo URL
     printWindow.document.write('<h2>ABC Lab</h2>');
     printWindow.document.write('<h3>"Your Health, Our Priority"</h3>'); // Slogan
     printWindow.document.write('</div>');
-  
-    // Lab and Patient Information
-    printWindow.document.write('<div class="container">');
-    printWindow.document.write('<div class="section">');
-    printWindow.document.write('<p><strong>Address:</strong> 123 Lab Street, City, Country</p>');
-    printWindow.document.write('<p><strong>Phone:</strong> +123-456-7890</p>');
-    printWindow.document.write('</div>');
-    
-    printWindow.document.write('<div class="section">');
+
+    // Patient Information
     printWindow.document.write('<p><strong>Patient Name:</strong> ' + formData.patientName + '</p>');
     printWindow.document.write('<p><strong>Age:</strong> ' + formData.age + '</p>');
     printWindow.document.write('<p><strong>Mobile Number:</strong> ' + formData.mobileNumber + '</p>');
-    printWindow.document.write('</div>');
-    printWindow.document.write('</div>');
-  
-    // Test Details
-    printWindow.document.write('<div class="test-details">');
+
+    // Test Results Table
     printWindow.document.write('<table>');
-    referenceRanges
-      .filter((test) => test["Test Name"] === selectedTest && test["Test Type"] === selectedTestType)
-      .forEach((test) => {
-        const testValue = formData[test["Test Name"]] || 'N/A';
-        const disease = test["Disease"] || 'None';
-        printWindow.document.write(`<tr><td>Test Name:</td><td>${test["Test Name"]}</td></tr>`);
-        printWindow.document.write(`<tr><td>Test Type:</td><td>${test["Test Type"]}</td></tr>`);
-        printWindow.document.write(`<tr><td>Entered Value:</td><td>${testValue}</td></tr>`);
-        printWindow.document.write(`<tr><td>Disease:</td><td>${disease}</td></tr>`);
-      });
-    printWindow.document.write('</table>');
-    printWindow.document.write('</div>');
-  
-    // Signature section
-    printWindow.document.write('<p><strong>Lab Technician Signature:</strong> ______________________</p>');
-  
+    printWindow.document.write('<thead><tr><th>Test Name</th><th>Test Type</th><th>Parameter</th><th>Entered Value</th><th>Normal Range</th><th>Method</th></tr></thead>');
+    printWindow.document.write('<tbody>');
+    tableData.forEach((row) => {
+      printWindow.document.write(`<tr><td>${row.testName}</td><td>${row.testType}</td><td>${row.parameter}</td><td>${row.value}</td><td>${row.normalRange}</td><td>${row.method}</td></tr>`);
+    });
+    printWindow.document.write('</tbody></table>');
+
     printWindow.document.write('</body></html>');
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
   };
-  
 
   if (loading) {
     return <Typography>Loading...</Typography>;
@@ -231,25 +199,25 @@ const LabTestForm = () => {
             style={{ marginBottom: '16px' }}
           />
 
-          {/* Autocomplete for Test Name */}
           <Autocomplete
-            options={[...new Set(referenceRanges.map((test) => test["Test Name"]))]} // Unique test names
+            options={[...new Set(referenceRanges.map((test) => test["testName"]))]} // Unique test names
             value={selectedTest}
             onChange={(event, newValue) => {
               setSelectedTest(newValue);
               setSelectedTestType(null); // Reset test type when a new test is selected
             }}
+            getOptionLabel={(option) => option || ''} // Ensure option is handled as a string
             renderInput={(params) => (
               <TextField {...params} label="Test Name" variant="outlined" fullWidth />
             )}
           />
 
-          {/* Autocomplete for Test Type, visible only if a test name is selected */}
           {selectedTest && (
             <Autocomplete
               options={availableTestTypes}
               value={selectedTestType}
               onChange={(event, newValue) => setSelectedTestType(newValue)}
+              getOptionLabel={(option) => option || ''}
               renderInput={(params) => (
                 <TextField {...params} label="Test Type" variant="outlined" fullWidth style={{ marginTop: '16px' }} />
               )}
@@ -257,39 +225,80 @@ const LabTestForm = () => {
           )}
 
           {/* Render form fields based on the selected test name and test type */}
-          {selectedTest && selectedTestType && (
-            referenceRanges
-              .filter((test) => test["Test Name"] === selectedTest && test["Test Type"] === selectedTestType)
-              .map((test, index) => (
-                <Box key={index} style={{ marginTop: '16px' }}>
-                  <Typography variant="subtitle1">{test["Test Name"]} ({test["Test Type"]})</Typography>
+          {selectedTestType && referenceRanges
+            .filter(test => test["testName"] === selectedTest)
+            .flatMap(test => test.sections
+              .filter(section => section.sectionName === selectedTestType)
+              .flatMap(section => section.parameters.map(param => (
+                <Box key={param.name} style={{ marginBottom: '16px' }}>
+                  <Typography variant="h6">{param.name}</Typography>
                   <TextField
-                    type="number"
-                    step="0.01"
-                    value={formData[test["Test Name"]] || ''}
-                    onChange={(event) => handleChange(event, test["Test Name"])}
-                    label={`Enter value (Min: ${test["Min Range"]}, Max: ${test["Max Range"]})`}
+                    label={`Enter ${param.name}`}
+                    type={param.method === 'Numeric' ? 'number' : 'text'} 
+                    onChange={(event) => handleChange(event, param.name)}
                     variant="outlined"
                     fullWidth
                   />
                 </Box>
-              ))
-          )}
+              )))
+            )
+          }
 
-          <Button type="submit" variant="contained" color="primary" style={{ marginTop: '20px' }}>Submit</Button>
-          <Button type="button" variant="contained" color="secondary" style={{ marginTop: '20px', marginLeft: '16px' }} onClick={handlePrint}>Print Receipt</Button>
+          <Button type="submit" variant="contained" color="primary" style={{ marginTop: '20px' }}>
+            Submit
+          </Button>
+
+          <Button onClick={handlePrint} variant="contained" color="secondary" style={{ marginTop: '20px', marginLeft: '10px' }}>
+            Print
+          </Button>
         </form>
 
         {/* Display alerts */}
         {alertMessages.length > 0 && (
           <Box style={{ marginTop: '20px' }}>
             {alertMessages.map((alert, index) => (
-              <Alert key={index} severity={alert.disease ? 'error' : 'success'}>
-                <Typography variant="body2">{alert.message}</Typography>
-                {alert.disease && <Typography variant="body2">Disease: {alert.disease}</Typography>}
+              <Alert key={index} severity="warning">
+                {alert.message}
+                {alert.disease && <div><strong>Disease:</strong> {alert.disease}</div>}
               </Alert>
             ))}
           </Box>
+        )}
+
+        {/* Display results table */}
+        {tableData && (
+          <TableContainer component={Paper} style={{ marginTop: '20px' }}>
+            <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Parameter</TableCell>
+                <TableCell>Entered Value</TableCell>
+                <TableCell>Normal Range</TableCell>
+                <TableCell>Method</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {tableData.map((row, index) => (
+                <React.Fragment key={index}>
+                  {/* Display Test Name and Test Type as a heading for each group */}
+                  <TableRow>
+                    <TableCell colSpan={4} style={{ fontWeight: 'bold' }}>
+                      {row.testName} - {row.testType}
+                    </TableCell>
+                  </TableRow>
+                  {/* Display the parameter rows */}
+                  <TableRow>
+                    <TableCell>{row.parameter}</TableCell>
+                    <TableCell>{row.value}</TableCell>
+                    <TableCell>{row.normalRange}</TableCell>
+                    <TableCell>{row.method}</TableCell>
+                  </TableRow>
+                </React.Fragment>
+              ))}
+            </TableBody>
+
+            </Table>
+          </TableContainer>
         )}
       </Paper>
     </Container>
