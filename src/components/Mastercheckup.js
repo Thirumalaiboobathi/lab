@@ -7,14 +7,17 @@ import {
   Box,
   Paper,
   Alert,
-  Grid
+  Grid,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
 import {
   Table,
   TableHead,
   TableBody,
   TableRow,
-  TableCell
+  TableCell,
+  TableContainer
  
   
  
@@ -276,29 +279,49 @@ const MasterCheckUp = () => {
             style={{ marginBottom: '16px' }}
           />
 <Box sx={{ padding: '16px' }}>
-      {referenceRanges.map((test) => (
-        <Box key={test["testName"]} sx={{ marginBottom: '24px' }}>
-          <Typography variant="h6" sx={{ marginBottom: '12px', fontWeight: 'bold' }}>
-            {test["testName"]}
-          </Typography>
-          <Grid container spacing={2}>
-            {test.sections.map((section) => (
-              <Grid item key={section.sectionName} xs={12} sm={6} md={4} lg={3}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  fullWidth
-                  onClick={() => handleTestSelection(test["testName"], section.sectionName)}
-                  sx={{ padding: '12px 16px', textTransform: 'none' }}
-                >
-                  {section.sectionName}
-                </Button>
+  <TableContainer component={Paper} sx={{ marginTop: '16px', border: '1px solid #ccc' }}>
+    <Table>
+      <TableHead>
+        <TableRow>
+          <TableCell align="left">
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Test Name</Typography>
+          </TableCell>
+          <TableCell align="left">
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Sections</Typography>
+          </TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {referenceRanges.map((test) => (
+          <TableRow key={test["testName"]} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+            <TableCell component="th" scope="row">
+              <Typography variant="body1" >
+                {test["testName"]}
+              </Typography>
+            </TableCell>
+            <TableCell>
+              <Grid container spacing={2}>
+                {test.sections.map((section) => (
+                  <Grid item key={section.sectionName} xs={12} sm={6} md={4} lg={3}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          color="primary"
+                          onChange={() => handleTestSelection(test["testName"], section.sectionName)}
+                        />
+                      }
+                      label={section.sectionName}
+                    />
+                  </Grid>
+                ))}
               </Grid>
-            ))}
-          </Grid>
-        </Box>
-      ))}
-    </Box>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </TableContainer>
+</Box>
 
 
 
