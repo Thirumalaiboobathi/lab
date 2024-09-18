@@ -253,11 +253,21 @@ const LabTestForm = () => {
 
   return (
     <Container>
-      <Typography variant="h4" gutterBottom>ABC Lab Test Form</Typography>
+       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px' }}>
+      <Typography variant="h4" sx={{ flex: 1 }}>
+        ABC Lab Test Form
+      </Typography>
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={handleNavigate}
+        sx={{ marginLeft: '16px' }}  // Optional spacing between the heading and button
+      >
+        MasterCheckUp
+      </Button>
+    </Box>
       <Paper elevation={3} style={{ padding: '20px' }}>
-      <Button variant="contained" color="secondary" onClick={handleNavigate}>
-            MasterCheckUp
-          </Button>
+      
         <form onSubmit={handleSubmit}>
           <TextField
             label="Patient Name"
@@ -333,7 +343,7 @@ const LabTestForm = () => {
                     {section.parameters.map((param, index) => (
                       <Grid item xs={12} sm={4} key={param.name}>
                         <TextField
-                          label={`Enter ${param.name}`}
+                          label={`Enter ${param.name} (Normal Range: ${param.normalRange || 'N/A'})`}
                           type={param.method === 'Numeric' ? 'number' : 'text'}
                           onChange={(event) => handleChange(event, param.name)}
                           variant="outlined"

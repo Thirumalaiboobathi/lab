@@ -275,25 +275,31 @@ const MasterCheckUp = () => {
             fullWidth
             style={{ marginBottom: '16px' }}
           />
-{referenceRanges.map((test) => (
-  <Box key={test["testName"]} sx={{ marginBottom: '16px' }}>
-    <Typography variant="h6" gutterBottom>{test["testName"]}</Typography>
-    <Grid container spacing={1}>
-      {test.sections.map((section) => (
-        <Grid item key={section.sectionName}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => handleTestSelection(test["testName"], section.sectionName)}
-            sx={{ marginRight: '8px', marginBottom: '8px' }}
-          >
-            {section.sectionName}
-          </Button>
-        </Grid>
+<Box sx={{ padding: '16px' }}>
+      {referenceRanges.map((test) => (
+        <Box key={test["testName"]} sx={{ marginBottom: '24px' }}>
+          <Typography variant="h6" sx={{ marginBottom: '12px', fontWeight: 'bold' }}>
+            {test["testName"]}
+          </Typography>
+          <Grid container spacing={2}>
+            {test.sections.map((section) => (
+              <Grid item key={section.sectionName} xs={12} sm={6} md={4} lg={3}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  onClick={() => handleTestSelection(test["testName"], section.sectionName)}
+                  sx={{ padding: '12px 16px', textTransform: 'none' }}
+                >
+                  {section.sectionName}
+                </Button>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
       ))}
-    </Grid>
-  </Box>
-))}
+    </Box>
+
 
 
           {selectedTests.length > 0 && selectedTests.map(({ testName, testType }) => {
@@ -306,7 +312,7 @@ const MasterCheckUp = () => {
                   {section.parameters.map((param) => (
                     <Grid item xs={12} sm={4} key={param.name}>
                       <TextField
-                        label={`Enter ${param.name}`}
+                        label={`Enter ${param.name} (Normal Range: ${param.normalRange || 'N/A'}) `}
                         type={param.method === 'Numeric' ? 'number' : 'text'}
                         onChange={(event) => handleChange(event, param.name)}
                         variant="outlined"
