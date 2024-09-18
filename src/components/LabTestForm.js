@@ -16,8 +16,14 @@ import {
   TableRow,
   Grid
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const LabTestForm = () => {
+  const navigate = useNavigate();
+
+  const handleNavigate = () => {
+    navigate('/master-checkup');
+  };
   const [formData, setFormData] = useState({
     patientName: '',
     age: '',
@@ -249,6 +255,9 @@ const LabTestForm = () => {
     <Container>
       <Typography variant="h4" gutterBottom>ABC Lab Test Form</Typography>
       <Paper elevation={3} style={{ padding: '20px' }}>
+      <Button variant="contained" color="secondary" onClick={handleNavigate}>
+            MasterCheckUp
+          </Button>
         <form onSubmit={handleSubmit}>
           <TextField
             label="Patient Name"
